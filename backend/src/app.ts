@@ -10,13 +10,18 @@ import errorHandler from './middlewares/error-handler'
 import serveStatic from './middlewares/serverStatic'
 import routes from './routes'
 
+
+const csrf = require('csurf');
+const csrfProtection = csrf({ cookie: true });
+
 const { PORT = 3000, ORIGIN_ALLOW } = process.env
 const app = express()
 const corsOptions = { origin: ORIGIN_ALLOW, credentials: true };
 
-app.use(cookieParser())
-// app.use(cors())
-app.use(cors({ origin: ORIGIN_ALLOW, credentials: true }));
+app.use(cookieParser());
+app.get('/auth/csrf-token', csrfProtection, (req, res) => {
+    res.send(req.csrfToken());
+});
 // app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(cors(corsOptions));
