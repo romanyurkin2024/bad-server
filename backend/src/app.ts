@@ -23,10 +23,9 @@ app.use(serveStatic(path.join(__dirname, 'public')))
 app.use(urlencoded({ extended: true }))
 app.use(json())
 
-// CSRF endpoint
 app.get('/auth/csrf-token', (req: Request, res: Response) => {
     const csrfToken = crypto.randomBytes(32).toString('hex')
-    res.cookie('csrf-token', csrfToken, {
+    res.cookie('_csrf', csrfToken, {
         httpOnly: true,
         sameSite: 'strict',
         secure: false,
@@ -34,13 +33,12 @@ app.get('/auth/csrf-token', (req: Request, res: Response) => {
     res.json({ csrfToken })
 })
 
-// CSRF validation middleware
 app.use((req: Request, res: Response, next: NextFunction) => {
     const safeMethods = ['GET', 'HEAD', 'OPTIONS']
     if (safeMethods.includes(req.method)) return next()
 
     const tokenFromHeader = req.headers['x-csrf-token'] as string
-    const tokenFromCookie = req.cookies['csrf-token']
+    const tokenFromCookie = req.cookies['_csrf']
 
     if (!tokenFromHeader || !tokenFromCookie || tokenFromHeader !== tokenFromCookie) {
         return res.status(403).json({ message: 'Invalid CSRF token' })
