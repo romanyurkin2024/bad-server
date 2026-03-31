@@ -19,6 +19,11 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
+        silenceDeprecations: [
+          'legacy-js-api', 
+          'global-builtin', 
+          'color-functions'
+        ],
         additionalData: `
           @use "./src/scss/variables" as *;
           @use "./src/scss/mixins";

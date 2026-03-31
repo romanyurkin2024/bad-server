@@ -1,35 +1,57 @@
 import { errors } from 'celebrate'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
+import crypto from 'crypto'
 import 'dotenv/config'
-import express, { json, urlencoded } from 'express'
+import express, { json, urlencoded, Request, Response, NextFunction } from 'express'
 import mongoose from 'mongoose'
 import path from 'path'
 import { DB_ADDRESS } from './config'
 import errorHandler from './middlewares/error-handler'
 import serveStatic from './middlewares/serverStatic'
 import routes from './routes'
+import limiter from './middlewares/ratelimiter'
 
-const { PORT = 3000 } = process.env
+const { PORT = 3000, ORIGIN_ALLOW } = process.env
 const app = express()
+const corsOptions = { origin: ORIGIN_ALLOW, credentials: true }
 
 app.use(cookieParser())
+app.use(cors(corsOptions))
+app.use(limiter)
+app.options('*', cors(corsOptions))
 
-app.use(cors())
-// app.use(cors({ origin: ORIGIN_ALLOW, credentials: true }));
-// app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(serveStatic(path.join(__dirname, 'public')))
-
 app.use(urlencoded({ extended: true }))
 app.use(json())
 
-app.options('*', cors())
+app.get('/auth/csrf-token', (req: Request, res: Response) => {
+    const csrfToken = crypto.randomBytes(32).toString('hex')
+    res.cookie('_csrf', csrfToken, {
+        httpOnly: true,
+        sameSite: 'strict',
+        secure: false,
+    })
+    res.json({ csrfToken })
+})
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+    const safeMethods = ['GET', 'HEAD', 'OPTIONS']
+    if (safeMethods.includes(req.method)) return next()
+
+    const tokenFromHeader = req.headers['x-csrf-token'] as string
+    const tokenFromCookie = req.cookies['_csrf']
+
+    if (!tokenFromHeader || !tokenFromCookie || tokenFromHeader !== tokenFromCookie) {
+        return res.status(403).json({ message: 'Invalid CSRF token' })
+    }
+    return next()
+})
+
 app.use(routes)
 app.use(errors())
 app.use(errorHandler)
-
-// eslint-disable-next-line no-console
 
 const bootstrap = async () => {
     try {
