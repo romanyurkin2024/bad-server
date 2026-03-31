@@ -10,8 +10,6 @@ import { DB_ADDRESS } from './config'
 import errorHandler from './middlewares/error-handler'
 import serveStatic from './middlewares/serverStatic'
 import routes from './routes'
-import mongoSanitize from 'express-mongo-sanitize'
-import { xssSanitizer } from 'middlewares/validations'
 
 const { PORT = 3000, ORIGIN_ALLOW } = process.env
 const app = express()
@@ -25,15 +23,6 @@ app.options('*', cors(corsOptions))
 app.use(serveStatic(path.join(__dirname, 'public')))
 app.use(urlencoded({ extended: true }))
 app.use(json())
-app.use(xssSanitizer); 
-
-app.use(mongoSanitize({
-    allowDots: true,
-    replaceWith: '_',
-    onSanitize: ({ req, key }) => {
-      console.warn(`[NoSQL Injection] Запрещенный символ в поле: ${key}`);
-}}));
-
 
 app.get('/auth/csrf-token', (req: Request, res: Response) => {
     const csrfToken = crypto.randomBytes(32).toString('hex')
