@@ -10,6 +10,7 @@ import { DB_ADDRESS } from './config'
 import errorHandler from './middlewares/error-handler'
 import serveStatic from './middlewares/serverStatic'
 import routes from './routes'
+import mongoSanitize from 'express-mongo-sanitize'
 
 const { PORT = 3000, ORIGIN_ALLOW } = process.env
 const app = express()
@@ -19,9 +20,12 @@ app.use(cookieParser())
 app.use(cors(corsOptions))
 app.options('*', cors(corsOptions))
 
+
 app.use(serveStatic(path.join(__dirname, 'public')))
 app.use(urlencoded({ extended: true }))
 app.use(json())
+app.use(mongoSanitize());
+
 
 app.get('/auth/csrf-token', (req: Request, res: Response) => {
     const csrfToken = crypto.randomBytes(32).toString('hex')
