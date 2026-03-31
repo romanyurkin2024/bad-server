@@ -1,11 +1,8 @@
 import { Joi, celebrate } from 'celebrate'
 import { Types } from 'mongoose'
 
-import { Request, Response, NextFunction } from 'express';
-import sanitizeHtml from 'sanitize-html';
-
 // eslint-disable-next-line no-useless-escape
-export const phoneRegExp = /^(\+\d+)?(?:\s|-?|\(?\d+\)?)+$/
+export const phoneRegExp = /^(\+\d+)?(?:\s|-?|\(?\d+\)?)+$/;
 
 export enum PaymentType {
     Card = 'card',
@@ -38,7 +35,7 @@ export const validateOrderBody = celebrate({
         email: Joi.string().email().required().messages({
             'string.empty': 'Не указан email',
         }),
-        phone: Joi.string().required().pattern(phoneRegExp).messages({
+        phone: Joi.string().required().pattern(phoneRegExp).max(18).messages({
             'string.empty': 'Не указан телефон',
         }),
         address: Joi.string().required().messages({
@@ -136,33 +133,3 @@ export const validateAuthentication = celebrate({
         }),
     }),
 })
-
-export const xssSanitizer = (req: Request, res: Response, next: NextFunction): void => {
-  const sanitize = (data: any): any => {
-    if (typeof data === 'string') {
-      return sanitizeHtml(data, {
-        allowedTags: [],
-        allowedAttributes: {},
-      });
-    }
-    if (Array.isArray(data)) {
-      return data.map((item) => sanitize(item));
-    }
-    if (typeof data === 'object' && data !== null) {
-      const cleanObject: Record<string, any> = {};
-      for (const key in data) {
-        if (Object.prototype.hasOwnProperty.call(data, key)) {
-          cleanObject[key] = sanitize(data[key]);
-        }
-      }
-      return cleanObject;
-    }
-    return data;
-  };
-
-  if (req.body) req.body = sanitize(req.body);
-  if (req.query) req.query = sanitize(req.query);
-  if (req.params) req.params = sanitize(req.params);
-
-  next();
-};
