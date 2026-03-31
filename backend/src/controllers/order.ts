@@ -17,7 +17,6 @@ export const getOrders = async (
     try {
         const {
             page = 1,
-            limit = 10,
             sortField = 'createdAt',
             sortOrder = 'desc',
             status,
@@ -27,7 +26,7 @@ export const getOrders = async (
             orderDateTo,
             search,
         } = req.query
-
+        const limit = Math.min(Math.max(Number(req.query.limit), 1), 10)
         const filters: FilterQuery<Partial<IOrder>> = {}
 
         if (status) {
